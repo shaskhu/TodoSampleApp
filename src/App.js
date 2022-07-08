@@ -2,8 +2,8 @@ import React from "react";
 import "./App.css";
 import { Button, Card, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { withAuthenticator, Heading } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
+import { withAuthenticator } from "@aws-amplify/ui-react";
+import { DataStore } from 'aws-amplify';
 
 function Todo({ todo, index, markTodo, removeTodo }) {
   return (
@@ -20,6 +20,8 @@ function Todo({ todo, index, markTodo, removeTodo }) {
   );
 }
 
+
+
 function FormTodo({ addTodo }) {
   const [value, setValue] = React.useState("");
 
@@ -28,6 +30,7 @@ function FormTodo({ addTodo }) {
     if (!value) return;
     addTodo(value);
     setValue("");
+    
   };
 
   return (
@@ -37,14 +40,14 @@ function FormTodo({ addTodo }) {
       <Form.Control type="text" className="input" value={value} onChange={e => 
 setValue(e.target.value)} placeholder="Add new item" />
     </Form.Group>
-    <Button variant="primary mb-3" type="submit">
+    <Button variant="primary mb-3" type="submit" onClick={DataStore.save(value)}>
       Submit
     </Button>
   </Form>
   );
 }
 
-function App({ signOut, user }) {
+function App() {
 
   const [todos, setTodos] = React.useState([
     {
@@ -56,19 +59,25 @@ function App({ signOut, user }) {
   const addTodo = text => {
     const newTodos = [...todos, { text }];
     setTodos(newTodos);
+    DataStore.save(newTodos);
   };
 
   const markTodo = index => {
     const newTodos = [...todos];
     newTodos[index].isDone = true;
+    DataStore.save(newTodos);
     setTodos(newTodos);
   };
 
   const removeTodo = index => {
     const newTodos = [...todos];
-    newTodos.splice(index, 1);
+    const del = newTodos.splice(index, 1);
+    DataStore.delete(del);
     setTodos(newTodos);
   };
+
+
+
 
   return (
     <div className="app">
@@ -91,11 +100,10 @@ function App({ signOut, user }) {
           ))}
         </div>
       </div>
-      <Heading level={1}>Hello {user.username}</Heading>
-      <Button onClick={signOut}>Sign out</Button>
     </div>  
 );
 
 }
 
-export default withAuthenticator(App);
+
+export default App;
