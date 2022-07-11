@@ -42,8 +42,6 @@ function App() {
   const [todos, setTodos] = useState([]);
   const [formState, setFormState] = useState("");
 
-  const [value, setValue] = useState("");
-
 
   useEffect(() => {
     console.log("in use effect");
@@ -55,16 +53,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   if (!value) {
-  //     console.log(" Value is empty!");
-  //     return;
-  //   }
-  //   console.log("in submit; adding: " + value);
-  //   addTodo(value);
-  //   setValue("");
-  // };
 
   async function getItems() {
     const items = null;
@@ -85,7 +73,7 @@ function App() {
 
 
   async function addTodo() {
-    console.log("entering add");
+    console.log("entering add: " + formState);
     try {
       const result = await DataStore.save(
         new Todo({
