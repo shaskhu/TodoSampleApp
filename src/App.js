@@ -10,14 +10,21 @@ As I mentioned before, try and stick as close to the amplify docs tutorials for 
 path is there. You are running into issues with how you're using React and JavaScript (see comment on scope below), 
 so best to work on one thing at a time. My suggestion is to stick as close to the docs as possible, and from there,
 start to branch out. */
+/*
+Note: There are still some issues, a lot of which would be caught with TypeScript - 
+and you’ll need to use TypeScript with your project, so I would convert your app to a 
+TS project once you get this working. See the section on adding to an existing project:
+https://create-react-app.dev/docs/adding-typescript/
+*/
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { DataStore, Card } from "aws-amplify";
+import { DataStore } from "aws-amplify";
+// TODO: import amplify ui components from UI library
+// see: https://ui.docs.amplify.aws/
 import { Todo } from "./models";
 
-
-
-const initialState = { text: "", isDone: false};
+// Not used
+// const initialState = { text: "", isDone: false };
 
 function TodoItem({ todo, index, markTodo, removeTodo }) {
   return (
@@ -37,65 +44,39 @@ function TodoItem({ todo, index, markTodo, removeTodo }) {
   );
 }
 
-
 function App() {
   const [todos, setTodos] = useState([]);
   const [formState, setFormState] = useState("");
 
-  const [value, setValue] = useState("");
-
+  // Not used:
+  // const [value, setValue] = useState("");
 
   useEffect(() => {
     console.log("in use effect");
     getItems();
     const subscription = DataStore.observe(Todo).subscribe((msg) => {
-      // TODO: do something with observe message:
+      // TODO: do something with observe message (i.e. add to component state)
       console.log("msg", msg);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   if (!value) {
-  //     console.log(" Value is empty!");
-  //     return;
-  //   }
-  //   console.log("in submit; adding: " + value);
-  //   addTodo(value);
-  //   setValue("");
-  // };
-
   async function getItems() {
-    const items = null;
-    console.log(" in get items");
-    try {
-      items = await DataStore.query(Todo);
-      console.log("return of DS query", items);
-    } catch (e) {
-      console.log("query failed");
-    }
-    if (!items) {
-      console.log("Datastore empty");
-      return;
-    }
-    // console.log("querying: " + items[0].text);
+    const items = await DataStore.query(Todo);
+    console.log("result of query", items);
     setTodos(items);
   }
 
-
   async function addTodo() {
-    console.log("entering add");
     try {
-      const result = await DataStore.save(
+      const todo = await DataStore.save(
         new Todo({
           text: formState,
           isDone: false,
         })
       );
-      console.log("result of DS save: " + result);
-      // TODO:
-      //setTodos(newTodos);
+      console.log("result of DS save: ", todo);
+      setTodos((todos) => [...todos, todo]);
     } catch (e) {
       console.log("save failed", e);
     }
@@ -103,40 +84,39 @@ function App() {
 
   const markTodo = (index) => {
     const newTodos = [...todos];
+    // TODO: use DS save to update
     newTodos[index].isDone = true;
     setTodos(newTodos);
   };
 
   const removeTodo = (index) => {
     const newTodos = [...todos];
+    // TODO: use DS delete to remove
     newTodos.splice(index, 1);
     setTodos(newTodos);
   };
-
 
   return (
     <div className="app">
       <div className="container">
         <h1 className="text-center mb-4">Todo List</h1>
         <input
-              onChange={(event) => setFormState(event.target.value)}
-              value={formState}
-              placeholder="Add new item"
-            />
+          onChange={(event) => setFormState(event.target.value)}
+          value={formState}
+          placeholder="Add new item"
+        />
         <button onClick={addTodo}>Submit</button>
         <div>
           {todos.map((todo, index) => (
-            <Card>
-              <Card.Body>
-                <TodoItem
-                  key={index}
-                  index={index}
-                  todo={todo}
-                  markTodo={markTodo}
-                  removeTodo={removeTodo}
-                />
-              </Card.Body>
-            </Card>
+            <div>
+              <TodoItem
+                key={index}
+                index={index}
+                todo={todo}
+                markTodo={markTodo}
+                removeTodo={removeTodo}
+              />
+            </div>
           ))}
         </div>
       </div>
