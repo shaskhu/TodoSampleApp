@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { DataStore } from "aws-amplify";
-import { Button, withAuthenticator } from "@aws-amplify/ui-react";
-import { Todo } from "./models";
+import { Button, withAuthenticator, Text } from "@aws-amplify/ui-react";
+import { Todo, Comment } from "./models";
+import { JsxEmit } from "typescript";
 
 
 function TodoItem({ todo, index, markTodo, removeTodo }: any) {
@@ -24,32 +25,54 @@ function TodoItem({ todo, index, markTodo, removeTodo }: any) {
   );
 }
 
+
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [comments, setComments] = useState<JSX.Element[]>([]);
   const [formState, setFormState] = useState("");
+  const [comment, setComment] = useState("");
 
 
   useEffect(() => {
     console.log("in use effect");
     getItems();
+    
     const subscription = DataStore.observe(Todo).subscribe((msg) => {
-      // TODO: do something with observe message (i.e. add to component state)
       console.log("msg", msg);
       getItems();
     });
-    return () => subscription.unsubscribe();
+    getComms();
+    const subscription2 = DataStore.observe(Comment).subscribe((msg) => {
+      console.log("msg", msg);
+      getComms();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      subscription2.unsubscribe();
+    }
   }, []);
+
+
 
   async function getItems() {
     
     const items = await DataStore.query(Todo);
     console.log("result of query", items);
-    
     setTodos(items);
   }
 
+  async function getComms() {
+    const comms = await DataStore.query(Comment);
+    for(var i = 0; i < comms.length; i++) {
+      comments.concat(<Text>{comms[i].content}</Text>);
+    }
+    setComments(comments);
+    console.log("queried comments: ", comments);
+
+  }
+
   async function addTodo() {
-    try {
       const todo : Todo = await DataStore.save(
         new Todo({
           text: formState,
@@ -58,9 +81,7 @@ function App() {
       );
       console.log("result of DS save: ", todo);
       setTodos((todos: Todo[]) => [...todos, todo]);
-    } catch (e) {
-      console.log("save failed", e);
-    }
+      setFormState("");
   }
 
   async function markTodo(index: any) {
@@ -87,8 +108,29 @@ function App() {
     setTodos(newTodos);
   };
 
+
+
+  async function addComment(index: any) {
+    const original = await DataStore.query(Todo);
+    const comm: Comment = await DataStore.save(new Comment({
+      todo: original[index],
+      content: comment
+    }));
+    
+    setComments(comments.concat(<Text>{comm.content}</Text>));
+    console.log(comments);
+    setComment("");
+
+
+  }
+
+  async function removeComment(index: any) {
+
+    const original = await DataStore.query(Comment);
+    await DataStore.delete(original[index]);
+
+  }
   
-  const handleFocus = (e: any) => e.target.select();
 
   return (
     <div className="app">
@@ -98,12 +140,12 @@ function App() {
           onChange={(event) => setFormState(event.target.value)}
           value={formState}
           placeholder="Add new item"
-          onFocus={handleFocus}
         />
         <Button onClick={addTodo}>Submit</Button>
         <div>
           {todos.map((todo: any, index: any) => (
             <div>
+              
               <TodoItem
                 key={index}
                 index={index}
@@ -111,6 +153,13 @@ function App() {
                 markTodo={markTodo}
                 removeTodo={removeTodo}
               />
+              <input
+                onChange={(event) => setComment(event.target.value)}
+                value={comment}
+                placeholder="Add new comment"
+              />
+              <Button onClick={() => addComment(index)}>Add</Button>
+              {comments}
             </div>
           ))}
         </div>

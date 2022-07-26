@@ -171,5 +171,5 @@ export const schema = {
     },
     "enums": {},
     "nonModels": {},
-    "version": "239d8b3943b51c8bf34cfc9782e4fa6a"
+    "version": "c0f18f5aab2ed324b200f61f26875e61"
 };

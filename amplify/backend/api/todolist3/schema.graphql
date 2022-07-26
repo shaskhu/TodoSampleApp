@@ -1,5 +1,13 @@
 type Todo @model @auth(rules: [{ allow: owner }]) {
+  id: ID!
   text: String!
   isDone: Boolean!
+  comments: [Comment] @hasMany(indexName: "byTodo", fields: ["id"])
 }
 
+type Comment @model @auth(rules: [{ allow: owner }]){
+  id: ID!
+  todoID: ID @index(name: "byTodo", sortKeyFields: ["content"])
+  todo: Todo! @belongsTo(fields: ["todoID"])
+  content: String!
+}
